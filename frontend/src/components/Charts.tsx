@@ -42,6 +42,21 @@ interface ChartItem {
 export const Charts: React.FC = () => {
   const modules = useStore(state => state.modules);
   
+  // 按制造商对模块名称进行分组
+  const modulesByManufacturer = useMemo(() => {
+    const groups: { [key: string]: string[] } = {};
+    modules.forEach(m => {
+      const mfr = m.manufacturer || '未知制造商';
+      if (!groups[mfr]) {
+        groups[mfr] = [];
+      }
+      if (m.name && !groups[mfr].includes(m.name)) {
+        groups[mfr].push(m.name);
+      }
+    });
+    return groups;
+  }, [modules]);
+
   // 提取所有独一无二的执行器名称列表
   const allModuleNames = useMemo(() => {
     const names = modules.map(m => m.name);
@@ -223,46 +238,75 @@ export const Charts: React.FC = () => {
     <div className="mb-8">
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-dark-800 border border-dark-700 p-4 rounded-xl shadow-sm">
         <div className="flex flex-col flex-1">
-          <span className="text-sm font-medium text-slate-400 mb-2">选择要显示数据的执行器名称:</span>
-          <div className="flex flex-wrap gap-2 items-center">
-            <button 
-              onClick={() => setSelectedNames(allModuleNames)}
-              className="text-xs px-2 py-1 rounded bg-dark-700 text-slate-300 hover:bg-dark-600 transition"
-            >
-              全部显示
-            </button>
-            <button 
-              onClick={() => setSelectedNames([])}
-              className="text-xs px-2 py-1 rounded bg-dark-700 text-slate-300 hover:bg-dark-600 transition mr-2"
-            >
-              全部隐藏
-            </button>
-            <div className="w-px h-4 bg-dark-600 mx-1"></div>
-            {allModuleNames.map(modName => {
-              const isSelected = selectedNames.includes(modName);
+          <span className="text-sm font-medium text-slate-400 mb-3">选择要显示数据的执行器名称:</span>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-2 items-center">
+              <button 
+                onClick={() => setSelectedNames(allModuleNames)}
+                className="text-xs px-3 py-1.5 rounded bg-dark-700 text-slate-300 hover:bg-dark-600 transition"
+              >
+                全部显示
+              </button>
+              <button 
+                onClick={() => setSelectedNames([])}
+                className="text-xs px-3 py-1.5 rounded bg-dark-700 text-slate-300 hover:bg-dark-600 transition mr-2"
+              >
+                全部隐藏
+              </button>
+            </div>
+            
+            {Object.entries(modulesByManufacturer).map(([mfr, names]) => {
+              const allSelected = names.length > 0 && names.every(n => selectedNames.includes(n));
+              const someSelected = names.some(n => selectedNames.includes(n));
+              
               return (
-                <button
-                  key={modName}
-                  onClick={() => {
-                    if (isSelected) {
-                      setSelectedNames(selectedNames.filter(m => m !== modName));
-                    } else {
-                      setSelectedNames([...selectedNames, modName]);
-                    }
-                  }}
-                  className={`text-xs px-3 py-1 rounded-full border transition-colors ${
-                    isSelected 
-                      ? 'bg-primary-500/20 border-primary-500 text-primary-400' 
-                      : 'bg-dark-900 border-dark-700 text-slate-500 hover:border-slate-500'
-                  }`}
-                >
-                  {modName}
-                </button>
+                <div key={mfr} className="flex flex-wrap gap-2 items-center pl-3 border-l-2 border-dark-600">
+                  <span className="text-xs text-slate-400 font-medium w-20 truncate" title={mfr}>{mfr}:</span>
+                  <button
+                    onClick={() => {
+                      if (allSelected) {
+                        setSelectedNames(selectedNames.filter(n => !names.includes(n)));
+                      } else {
+                        const newSelected = new Set([...selectedNames, ...names]);
+                        setSelectedNames(Array.from(newSelected));
+                      }
+                    }}
+                    className={`text-xs px-2 py-1 rounded transition-colors ${
+                      allSelected ? 'bg-primary-500/20 text-primary-400' : 
+                      someSelected ? 'bg-primary-500/10 text-primary-400/70' : 'bg-dark-700 text-slate-400 hover:bg-dark-600'
+                    }`}
+                  >
+                    {allSelected ? '全不选' : '全选'}
+                  </button>
+                  <div className="w-px h-4 bg-dark-600 mx-1"></div>
+                  {names.map(modName => {
+                    const isSelected = selectedNames.includes(modName);
+                    return (
+                      <button
+                        key={modName}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedNames(selectedNames.filter(m => m !== modName));
+                          } else {
+                            setSelectedNames([...selectedNames, modName]);
+                          }
+                        }}
+                        className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                          isSelected 
+                            ? 'bg-primary-500/20 border-primary-500 text-primary-400' 
+                            : 'bg-dark-900 border-dark-700 text-slate-500 hover:border-slate-500'
+                        }`}
+                      >
+                        {modName}
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
           </div>
         </div>
-        <div className="flex items-center gap-2 border-l border-dark-700 pl-4">
+        <div className="flex items-center gap-2 border-l border-dark-700 pl-4 h-full self-stretch">
           <span className="text-sm text-slate-300">显示数值</span>
           <button 
             onClick={() => setShowLabels(!showLabels)}
