@@ -147,7 +147,8 @@ export const Charts: React.FC = () => {
           symbolSize: 15,
           data: filteredModules.filter(m => m.weight && m.peak_torque).map(m => [m.weight || 0, m.peak_torque || 0, m.name]),
           itemStyle: { color: '#f59e0b' },
-          label: { show: showLabels, formatter: '{@[2]}', position: 'top', color: '#cbd5e1', fontSize: 10 }
+          label: { show: showLabels, formatter: '{@[2]}', position: 'top', color: '#cbd5e1', fontSize: 10 },
+          labelLayout: { hideOverlap: true }
         });
       }
       if (isNominal) {
@@ -157,7 +158,8 @@ export const Charts: React.FC = () => {
           symbolSize: 15,
           data: filteredModules.filter(m => m.weight && m.nominal_torque).map(m => [m.weight || 0, m.nominal_torque || 0, m.name]),
           itemStyle: { color: '#10b981' },
-          label: { show: showLabels, formatter: '{@[2]}', position: 'top', color: '#cbd5e1', fontSize: 10 }
+          label: { show: showLabels, formatter: '{@[2]}', position: 'top', color: '#cbd5e1', fontSize: 10 },
+          labelLayout: { hideOverlap: true }
         });
       }
 
@@ -165,7 +167,7 @@ export const Charts: React.FC = () => {
         title: { text: '扭矩与重量关系 (密度)', textStyle: { color: '#e2e8f0', fontSize: 14 }, top: 0, left: 'center' },
         tooltip: {
           formatter: function (param: any) {
-            const density = (param.data[1] / param.data[0]).toFixed(2);
+            const density = (param.data[0] === 0 ? 0 : param.data[1] / param.data[0]).toFixed(2);
             return `${param.data[2]}<br/>重量: ${param.data[0]} kg<br/>扭矩: ${param.data[1]} Nm<br/>密度: ${density} Nm/kg`;
           }
         },
@@ -175,6 +177,11 @@ export const Charts: React.FC = () => {
           bottom: 0
         },
         grid: { top: '15%', left: '5%', right: '5%', bottom: '15%', containLabel: true },
+        dataZoom: [
+          { type: 'inside', xAxisIndex: 0, yAxisIndex: 0 },
+          { type: 'slider', xAxisIndex: 0, bottom: 25, height: 15, textStyle: { color: '#94a3b8' } },
+          { type: 'slider', yAxisIndex: 0, right: 10, width: 15, textStyle: { color: '#94a3b8' } }
+        ],
         xAxis: {
           name: '重量 (kg)',
           nameTextStyle: { color: '#94a3b8' },
