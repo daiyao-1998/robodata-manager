@@ -1,3 +1,5 @@
+import json
+import os
 from sqlalchemy.orm import Session
 from app import crud, schemas
 from app.core.config import settings
@@ -24,6 +26,21 @@ def init_db(db: Session) -> None:
     # 插入一些测试数据
     modules = crud.robot_module.get_multi(db)
     if not modules:
+        # 尝试从 backend/data.json 读取数据
+        json_path = os.path.join(os.path.dirname(__file__), "../../data.json")
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    test_modules_data = json.load(f)
+                for item in test_modules_data:
+                    # 如果缺少某些非必填字段，可以在这里处理，但 Pydantic 通常会自动处理
+                    module_in = schemas.RobotModuleCreate(**item)
+                    crud.robot_module.create(db, obj_in=module_in)
+                return
+            except Exception as e:
+                print(f"Error loading data.json: {e}")
+        
+        # 如果 data.json 不存在或读取失败，则使用硬编码的默认数据
         test_modules = [
             schemas.RobotModuleCreate(
                 name="Unitree A1", manufacturer="Unitree",
