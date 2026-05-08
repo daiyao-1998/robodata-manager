@@ -68,7 +68,7 @@ export const Charts: React.FC = () => {
   // 维护图表配置列表
   const [charts, setCharts] = useState<ChartItem[]>([
     { id: 'chart-1', metrics: ['peak_torque', 'nominal_torque'] },
-    { id: 'chart-2', metrics: ['start_stop_torque', 'stall_torque'] }
+    { id: 'chart-2', metrics: ['peak_torque_density', 'nominal_torque_density'] }
   ]);
 
   // 维护网格布局状态
