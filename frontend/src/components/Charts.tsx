@@ -193,7 +193,7 @@ export const Charts: React.FC = () => {
       };
     }
 
-    // 默认情况：渲染柱状图
+    // 默认情况：渲染横向柱状图 (方法C)
     const names = filteredModules.map(m => m.name);
     const series = metrics.map(metricKey => {
       const metricDef = METRIC_OPTIONS.find(opt => opt.key === metricKey);
@@ -201,10 +201,10 @@ export const Charts: React.FC = () => {
         name: metricDef?.label || metricKey,
         type: 'bar',
         data: filteredModules.map((m: any) => m[metricKey] || 0),
-        itemStyle: { borderRadius: [4, 4, 0, 0] },
+        itemStyle: { borderRadius: [0, 4, 4, 0] },
         label: {
           show: showLabels,
-          position: 'top',
+          position: 'right',
           color: '#cbd5e1',
           fontSize: 10,
         }
@@ -212,23 +212,43 @@ export const Charts: React.FC = () => {
     });
 
     return {
-      tooltip: { trigger: 'axis' },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
       legend: {
         data: series.map(s => s.name),
         textStyle: { color: '#cbd5e1' },
         top: 0
       },
-      grid: { top: '15%', left: '3%', right: '4%', bottom: '3%', containLabel: true },
+      grid: { top: '15%', left: '3%', right: '8%', bottom: '5%', containLabel: true },
+      dataZoom: [
+        {
+          type: 'slider',
+          yAxisIndex: 0,
+          right: 10,
+          start: 0,
+          end: names.length > 15 ? (15 / names.length) * 100 : 100, // 默认显示约15个执行器以保证柱子不过细
+          textStyle: { color: '#94a3b8' }
+        },
+        {
+          type: 'inside',
+          yAxisIndex: 0
+        }
+      ],
       xAxis: {
-        type: 'category',
-        data: names,
-        axisLine: { lineStyle: { color: '#475569' } },
-        axisLabel: { color: '#94a3b8' }
-      },
-      yAxis: {
         type: 'value',
         splitLine: { lineStyle: { color: '#334155' } },
         axisLabel: { color: '#94a3b8' }
+      },
+      yAxis: {
+        type: 'category',
+        data: names,
+        axisLine: { lineStyle: { color: '#475569' } },
+        axisLabel: { 
+          color: '#94a3b8',
+          interval: 0,
+          width: 100,
+          overflow: 'truncate'
+        },
+        inverse: true // 反转Y轴，让第一个数据在最上面
       },
       series: series
     };
