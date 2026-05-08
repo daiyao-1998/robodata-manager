@@ -1,58 +1,58 @@
-# 项目部署指南 (Serverless 方案)
+# 项目部署指南 (国内大厂方案 - 腾讯云)
 
-本指南将指导您如何将项目免费、快速地部署到公网。
+本指南将指导您如何将项目部署到国内的腾讯云，无需绑定国际信用卡，且国内访问速度极快。
+
 我们推荐的方案是：
-- **后端 (FastAPI + SQLite)** 部署在 [Render](https://render.com/)
-- **前端 (React)** 部署在 [Vercel](https://vercel.com/)
+- **后端 (FastAPI + SQLite)** 部署在 **腾讯云 云托管 (CloudRun / 微信云托管)**
+- **前端 (React)** 部署在 **腾讯云 Web应用托管 (Webify)**
 
 ## 准备工作
-1. 注册一个 [GitHub](https://github.com/) 账号（如果还没有）。
-2. 在您的本地电脑上，将当前项目 `e:\DataManager` 作为一个代码仓库（Repository）推送到 GitHub。
-   > 确保您的代码库包含根目录下的 `backend` 和 `frontend` 文件夹。
+1. 注册并实名认证 [腾讯云](https://cloud.tencent.com/) 账号。
+2. 确保您的代码已经推送到 GitHub 仓库。
 
 ---
 
-## 步骤一：部署后端 (Render)
+## 步骤一：部署后端 (腾讯云 云托管 CloudRun)
 
-Render 提供了免费的 Web Service，非常适合托管 Python FastAPI。
+腾讯云托管会自动识别我们项目 `backend` 目录下的 `Dockerfile` 进行容器化部署。
 
-1. 登录 [Render](https://dashboard.render.com/)。
-2. 点击右上角 **New**，选择 **Web Service**。
-3. 绑定您的 GitHub 账号，并选择您刚才推送的项目仓库。
-4. 在服务配置页面，按以下信息填写：
-   - **Name**: `robodata-backend` (可自定义)
-   - **Root Directory**: `backend`
-   - **Environment**: `Python 3`
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: 留空（Render 会自动读取我们在 `backend` 目录下创建的 `Procfile`）
-   - **Instance Type**: 免费版 (Free)
-5. 点击 **Create Web Service**。
-6. 稍等片刻，Render 会分配给您一个公网域名（例如 `https://robodata-backend.onrender.com`）。
-   > **请将这个域名复制下来，部署前端时会用到！**
+1. 登录腾讯云控制台，搜索并进入 **云托管 (CloudRun)**（或微信云托管）。
+2. 点击 **新建服务**。
+3. **代码来源** 选择 **GitHub**，进行授权并选择您的 `robodata-manager` 仓库。
+4. 配置服务：
+   - **服务名称**: `robodata-backend`
+   - **所在目录**: `backend` (非常重要，一定要填这个！)
+   - **构建方式**: `Dockerfile` (系统会自动识别)
+   - **端口**: `80`
+5. 点击 **创建/部署**。
+6. 部署成功后，腾讯云会为您分配一个公网访问域名（请确保在服务设置中开启了公网访问）。
+   > **请复制这个后端域名（例如 `https://xxx.ap-shanghai.run.tcloudbase.com`），部署前端时需要用到！**
 
 ---
 
-## 步骤二：部署前端 (Vercel)
+## 步骤二：部署前端 (腾讯云 Webify)
 
-Vercel 是目前托管 React 前端最快、体验最好的平台。
+腾讯云 Webify 专门用于托管前端单页应用（SPA），完美支持我们的 React + Vite 项目。
 
-1. 登录 [Vercel](https://vercel.com/)，推荐使用 GitHub 账号直接登录。
-2. 点击右上角 **Add New...**，选择 **Project**。
-3. 在 Import Git Repository 列表中，找到并 **Import** 您的项目仓库。
-4. 在配置页面中：
-   - **Project Name**: `robodata-frontend` (可自定义)
-   - **Framework Preset**: 会自动识别为 `Vite`。
-   - **Root Directory**: 点击右侧的 `Edit`，选择 `frontend` 文件夹。
-5. **展开 Environment Variables（环境变量）选项卡**，添加一项：
-   - **Name**: `VITE_API_URL`
-   - **Value**: 填写您在步骤一中得到的后端地址（例如 `https://robodata-backend.onrender.com`）。
-6. 点击 **Deploy** 开始部署。
-7. 部署完成后，Vercel 也会给您分配一个公网域名，任何人都可以通过这个域名访问您的系统了！
+1. 登录腾讯云控制台，搜索并进入 **Web应用托管 (Webify)**。
+2. 点击 **新建应用**，选择 **从 GitHub 仓库导入**。
+3. 选择您的 `robodata-manager` 仓库。
+4. 配置应用：
+   - **应用名称**: `robodata-frontend`
+   - **根目录**: `frontend` (非常重要，一定要填这个！)
+   - **框架**: `Vite` (通常会自动识别)
+   - **构建命令**: `npm run build`
+   - **输出目录**: `dist`
+5. **环境变量配置**：
+   - 展开环境变量设置，点击添加。
+   - **变量名**: `VITE_API_URL`
+   - **变量值**: 填写 **步骤一中获取的后端公网域名**。
+6. 点击 **部署应用**。
+7. 部署完成后，Webify 会为您提供一个默认的访问域名（类似于 `xxx.webify.cloud.tencent.com`），您可以通过该域名直接访问您的机器人数据管理系统了！
 
 ---
 
-## 💡 注意事项与常见问题
+## 💡 注意事项
 
-- **数据库持久化**：由于我们使用的是 SQLite 文件型数据库，在 Render 的免费版中，每次重新部署（或长时间不活动重启后），容器会被重置，导致 `sql_app.db` 文件丢失（数据被初始化）。如果您需要长期保存数据，建议在 Render 中配置 **Disk (挂载磁盘)**，或将数据库替换为云端的 PostgreSQL / MySQL。
-- **冷启动延迟**：Render 的免费服务如果在 15 分钟内没有被访问，会自动休眠。下一次有人访问时会经历大约 30 秒的“冷启动”唤醒时间，这是正常现象。
-- **跨域问题 (CORS)**：后端代码中目前配置的 CORS 是 `allow_origins=["*"]`（允许所有域名），这确保了无论您的前端部署在哪里，都能成功请求到后端接口。
+- **数据库持久化**：云托管的容器是无状态的，这意味着如果不配置外部存储，容器重启后 SQLite 数据库 (`sql_app.db`) 会被重置。在云托管中，您可以在服务配置的“存储”选项中，挂载一个 **CFS (文件存储)** 到 `/app` 目录，并将数据库文件保存在那里，以实现数据的永久保存。
+- **费用问题**：腾讯云的这些服务通常都有一定的免费额度（免费额度内基本不扣费），或者按量计费（对于个人小项目来说费用极低，通常每个月几毛钱到几块钱）。部署前请保证腾讯云账户内有少量的余额（如 5-10 元）即可顺畅使用。
