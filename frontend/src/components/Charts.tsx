@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { useStore } from '../store';
-import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, XMarkIcon, BarsArrowDownIcon, BarsArrowUpIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline';
 import { WidthProvider, Responsive } from 'react-grid-layout/legacy';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -37,6 +37,7 @@ const METRIC_OPTIONS = [
 interface ChartItem {
   id: string;
   metrics: string[];
+  sortOrder?: 'asc' | 'desc' | 'none';
 }
 
 export const Charts: React.FC = () => {
@@ -82,8 +83,8 @@ export const Charts: React.FC = () => {
 
   // 维护图表配置列表
   const [charts, setCharts] = useState<ChartItem[]>([
-    { id: 'chart-1', metrics: ['peak_torque', 'nominal_torque'] },
-    { id: 'chart-2', metrics: ['peak_torque_density', 'nominal_torque_density'] }
+    { id: 'chart-1', metrics: ['peak_torque', 'nominal_torque'], sortOrder: 'none' },
+    { id: 'chart-2', metrics: ['peak_torque_density', 'nominal_torque_density'], sortOrder: 'none' }
   ]);
 
   // 维护网格布局状态
@@ -100,7 +101,7 @@ export const Charts: React.FC = () => {
   const handleAddChart = () => {
     if (newChartMetrics.length > 0) {
       const newId = `chart-${Date.now()}`;
-      setCharts([...charts, { id: newId, metrics: newChartMetrics }]);
+      setCharts([...charts, { id: newId, metrics: newChartMetrics, sortOrder: 'none' }]);
       
       // 为新图表添加默认的布局配置
       const newLayoutItem: any = { 
@@ -130,9 +131,33 @@ export const Charts: React.FC = () => {
     setLayouts(allLayouts);
   };
 
-  const getChartOption = (metrics: string[]) => {
+  const toggleSort = (id: string) => {
+    setCharts(charts.map(c => {
+      if (c.id === id) {
+        let newOrder: 'asc' | 'desc' | 'none' = 'none';
+        if (c.sortOrder === 'none' || !c.sortOrder) newOrder = 'desc';
+        else if (c.sortOrder === 'desc') newOrder = 'asc';
+        else newOrder = 'none';
+        return { ...c, sortOrder: newOrder };
+      }
+      return c;
+    }));
+  };
+
+  const getChartOption = (chart: ChartItem) => {
+    const { metrics, sortOrder } = chart;
     // 检查是否包含密度计算指标
     const hasDensity = metrics.includes('peak_torque_density') || metrics.includes('nominal_torque_density');
+
+    let localModules = [...filteredModules];
+    if (!hasDensity && sortOrder && sortOrder !== 'none' && metrics.length > 0) {
+      const sortBy = metrics[0];
+      localModules.sort((a: any, b: any) => {
+        const valA = a[sortBy] || 0;
+        const valB = b[sortBy] || 0;
+        return sortOrder === 'asc' ? valA - valB : valB - valA;
+      });
+    }
 
     if (hasDensity) {
       // 如果包含密度指标，则使用散点图 (Torque vs Weight)
@@ -201,13 +226,13 @@ export const Charts: React.FC = () => {
     }
 
     // 默认情况：渲染横向柱状图 (方法C)
-    const names = filteredModules.map(m => m.name);
+    const names = localModules.map(m => m.name);
     const series = metrics.map(metricKey => {
       const metricDef = METRIC_OPTIONS.find(opt => opt.key === metricKey);
       return {
         name: metricDef?.label || metricKey,
         type: 'bar',
-        data: filteredModules.map((m: any) => m[metricKey] || 0),
+        data: localModules.map((m: any) => m[metricKey] || 0),
         itemStyle: { borderRadius: [0, 4, 4, 0] },
         label: {
           show: showLabels,
@@ -393,27 +418,59 @@ export const Charts: React.FC = () => {
           onLayoutChange={onLayoutChange}
           draggableHandle=".drag-handle"
         >
-          {charts.map((chart) => (
+          {charts.map((chart) => {
+            const hasDensity = chart.metrics.includes('peak_torque_density') || chart.metrics.includes('nominal_torque_density');
+            return (
             <div key={chart.id} className="relative rounded-xl border border-dark-700 bg-dark-800 shadow-lg group flex flex-col overflow-hidden">
               <div className="drag-handle absolute top-0 left-0 right-0 h-6 cursor-move bg-dark-700/80 rounded-t-xl opacity-0 group-hover:opacity-100 transition z-20 flex items-center justify-center backdrop-blur-sm">
                 <span className="text-xs text-slate-300">拖拽此处移动位置</span>
               </div>
+              <div className="absolute top-2 right-10 z-30 transition flex gap-2">
+                {!hasDensity && (
+                  <button 
+                    onClick={() => toggleSort(chart.id)}
+                    className={`p-1.5 rounded-md shadow-md transition flex items-center gap-1 ${
+                      chart.sortOrder && chart.sortOrder !== 'none' 
+                        ? 'bg-primary-500 text-white hover:bg-primary-600' 
+                        : 'bg-dark-600 text-slate-300 hover:bg-dark-500'
+                    }`}
+                    title="排序 (按第一个指标)"
+                  >
+                    {chart.sortOrder === 'desc' ? (
+                      <>
+                        <BarsArrowDownIcon className="h-4 w-4" />
+                        <span className="text-[10px]">降序</span>
+                      </>
+                    ) : chart.sortOrder === 'asc' ? (
+                      <>
+                        <BarsArrowUpIcon className="h-4 w-4" />
+                        <span className="text-[10px]">升序</span>
+                      </>
+                    ) : (
+                      <>
+                        <ArrowsUpDownIcon className="h-4 w-4" />
+                        <span className="text-[10px]">排序</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
               <button 
                 onClick={() => removeChart(chart.id)}
-                className="absolute top-1 right-2 p-1 rounded-full bg-dark-600 text-slate-300 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition z-30 shadow-md"
+                className="absolute top-2 right-2 p-1.5 rounded-md bg-dark-600 text-slate-300 opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition z-30 shadow-md"
                 title="移除图表"
               >
                 <XMarkIcon className="h-4 w-4" />
               </button>
               <div className="flex-1 w-full h-full p-2 pt-6 pb-2">
                 <ReactECharts 
-                  option={getChartOption(chart.metrics)} 
+                  option={getChartOption(chart)} 
                   style={{ height: '100%', width: '100%' }} 
                   notMerge={true} 
                 />
               </div>
             </div>
-          ))}
+          )})}
         </ResponsiveGridLayout>
       ) : (
         !isAdding && (
