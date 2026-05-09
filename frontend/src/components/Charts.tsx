@@ -83,15 +83,15 @@ export const Charts: React.FC = () => {
 
   // 维护图表配置列表
   const [charts, setCharts] = useState<ChartItem[]>([
-    { id: 'chart-1', metrics: ['peak_torque', 'nominal_torque'], sortOrder: 'none' },
-    { id: 'chart-2', metrics: ['peak_torque_density', 'nominal_torque_density'], sortOrder: 'none' }
+    { id: 'chart-1', metrics: ['nominal_torque'], sortOrder: 'none' },
+    { id: 'chart-2', metrics: ['nominal_torque_density'], sortOrder: 'none' }
   ]);
 
   // 维护网格布局状态
   const [layouts, setLayouts] = useState<{ [key: string]: any[] }>({
     lg: [
-      { i: 'chart-1', x: 0, y: 0, w: 6, h: 10 },
-      { i: 'chart-2', x: 6, y: 0, w: 6, h: 10 }
+      { i: 'chart-1', x: 0, y: 0, w: 12, h: 10 },
+      { i: 'chart-2', x: 0, y: 10, w: 12, h: 10 }
     ]
   });
 
@@ -170,7 +170,10 @@ export const Charts: React.FC = () => {
           name: '峰值扭矩密度 (Nm/kg)',
           type: 'scatter',
           symbolSize: 15,
-          data: filteredModules.filter(m => m.weight && m.peak_torque).map(m => [m.weight || 0, m.peak_torque || 0, m.name]),
+          data: filteredModules.filter(m => m.weight && m.peak_torque).map(m => ({
+            value: [m.weight || 0, m.peak_torque || 0, m.name],
+            itemStyle: m.manufacturer === '傅利叶' ? { color: '#ef4444', borderColor: '#f87171', borderWidth: 2 } : undefined
+          })),
           itemStyle: { color: '#f59e0b' },
           label: { show: showLabels, formatter: '{@[2]}', position: 'top', color: '#cbd5e1', fontSize: 10 },
           labelLayout: { hideOverlap: true }
@@ -181,7 +184,10 @@ export const Charts: React.FC = () => {
           name: '额定扭矩密度 (Nm/kg)',
           type: 'scatter',
           symbolSize: 15,
-          data: filteredModules.filter(m => m.weight && m.nominal_torque).map(m => [m.weight || 0, m.nominal_torque || 0, m.name]),
+          data: filteredModules.filter(m => m.weight && m.nominal_torque).map(m => ({
+            value: [m.weight || 0, m.nominal_torque || 0, m.name],
+            itemStyle: m.manufacturer === '傅利叶' ? { color: '#ef4444', borderColor: '#f87171', borderWidth: 2 } : undefined
+          })),
           itemStyle: { color: '#10b981' },
           label: { show: showLabels, formatter: '{@[2]}', position: 'top', color: '#cbd5e1', fontSize: 10 },
           labelLayout: { hideOverlap: true }
@@ -192,8 +198,9 @@ export const Charts: React.FC = () => {
         title: { text: '扭矩与重量关系 (密度)', textStyle: { color: '#e2e8f0', fontSize: 14 }, top: 0, left: 'center' },
         tooltip: {
           formatter: function (param: any) {
-            const density = (param.data[0] === 0 ? 0 : param.data[1] / param.data[0]).toFixed(2);
-            return `${param.data[2]}<br/>重量: ${param.data[0]} kg<br/>扭矩: ${param.data[1]} Nm<br/>密度: ${density} Nm/kg`;
+            const val = param.value || param.data;
+            const density = (val[0] === 0 ? 0 : val[1] / val[0]).toFixed(2);
+            return `${val[2]}<br/>重量: ${val[0]} kg<br/>扭矩: ${val[1]} Nm<br/>密度: ${density} Nm/kg`;
           }
         },
         legend: {
@@ -232,7 +239,10 @@ export const Charts: React.FC = () => {
       return {
         name: metricDef?.label || metricKey,
         type: 'bar',
-        data: localModules.map((m: any) => m[metricKey] || 0),
+        data: localModules.map((m: any) => ({
+          value: m[metricKey] || 0,
+          itemStyle: m.manufacturer === '傅利叶' ? { color: '#ef4444' } : undefined
+        })),
         itemStyle: { borderRadius: [0, 4, 4, 0] },
         label: {
           show: showLabels,
