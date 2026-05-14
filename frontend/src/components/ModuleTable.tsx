@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useStore } from '../store';
-import { PencilSquareIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, TrashIcon, PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ModelViewer3D } from './ModelViewer3D';
 
 export const ModuleTable: React.FC = () => {
   const { modules, user, deleteModule, createModule, updateModule } = useStore();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [isAdding, setIsAdding] = useState(false);
+  const [previewModel, setPreviewModel] = useState<string | null>(null);
 
   const isAdmin = user?.is_superuser;
 
@@ -44,6 +46,7 @@ export const ModuleTable: React.FC = () => {
           <thead className="bg-dark-900 text-xs uppercase text-slate-400">
             <tr>
               <th className="px-6 py-3 whitespace-nowrap">名称</th>
+              <th className="px-6 py-3 whitespace-nowrap">3D模型</th>
               <th className="px-6 py-3 whitespace-nowrap">制造商</th>
               <th className="px-6 py-3 whitespace-nowrap">峰值扭矩 (Nm)</th>
               <th className="px-6 py-3 whitespace-nowrap">额定扭矩 (Nm)</th>
@@ -75,6 +78,7 @@ export const ModuleTable: React.FC = () => {
             {isAdding && (
               <tr className="border-b border-dark-700 bg-dark-800">
                 <td className="px-6 py-4"><input className="w-24 bg-dark-900 px-2 py-1 rounded" placeholder="名称" onChange={e => setEditForm({...editForm, name: e.target.value})} /></td>
+                <td className="px-6 py-4 text-slate-500 bg-dark-900/50 rounded">-</td>
                 <td className="px-6 py-4"><input className="w-24 bg-dark-900 px-2 py-1 rounded" placeholder="制造商" onChange={e => setEditForm({...editForm, manufacturer: e.target.value})} /></td>
                 <td className="px-6 py-4"><input className="w-16 bg-dark-900 px-2 py-1 rounded" type="number" step="0.1" placeholder="峰值" onChange={e => setEditForm({...editForm, peak_torque: parseFloat(e.target.value)})} /></td>
                 <td className="px-6 py-4"><input className="w-16 bg-dark-900 px-2 py-1 rounded" type="number" step="0.1" placeholder="额定" onChange={e => setEditForm({...editForm, nominal_torque: parseFloat(e.target.value)})} /></td>
@@ -111,6 +115,23 @@ export const ModuleTable: React.FC = () => {
                   {editingId === mod.id ? 
                     <input className="w-24 bg-dark-900 px-2 py-1 rounded" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} />
                     : mod.name}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {mod.model_3d ? (
+                    <button
+                      onClick={() => setPreviewModel(`/models/${mod.model_3d}`)}
+                      className="px-3 py-1 bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 rounded-md text-xs font-medium transition-colors"
+                    >
+                      预览
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="px-3 py-1 bg-dark-700 text-slate-500 rounded-md text-xs font-medium cursor-not-allowed opacity-50"
+                    >
+                      无模型
+                    </button>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {editingId === mod.id ? 
@@ -252,6 +273,26 @@ export const ModuleTable: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* 3D Model Preview Modal */}
+      {previewModel && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="relative w-[90vw] h-[85vh] bg-dark-800 rounded-xl shadow-2xl border border-dark-700 flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-dark-700">
+              <h3 className="text-lg font-semibold text-white">3D 模型预览</h3>
+              <button 
+                onClick={() => setPreviewModel(null)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="flex-1 w-full h-full relative">
+              <ModelViewer3D src={previewModel} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

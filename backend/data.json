@@ -901,6 +901,7 @@
   },
   {
     "name": "PJ3-75",
+    "model_3d": "雷赛-pj3-75ec42.glb",
     "manufacturer": "雷赛",
     "peak_torque": 42.0,
     "nominal_torque": 14.0,

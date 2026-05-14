@@ -11,6 +11,7 @@ interface User {
 interface RobotModule {
   id: number;
   name: string;
+  model_3d?: string;
   manufacturer?: string;
   peak_torque?: number;
   nominal_torque?: number;
