@@ -9,6 +9,7 @@ export const ModuleTable: React.FC = () => {
   const [editForm, setEditForm] = useState<any>({});
   const [isAdding, setIsAdding] = useState(false);
   const [previewModel, setPreviewModel] = useState<string | null>(null);
+  const [previewPdf, setPreviewPdf] = useState<string | null>(null);
 
   const isAdmin = user?.is_superuser;
 
@@ -119,7 +120,7 @@ export const ModuleTable: React.FC = () => {
                 <td className="px-6 py-4 whitespace-nowrap">
                   {mod.model_3d ? (
                     <button
-                      onClick={() => setPreviewModel(`/models/${mod.model_3d}`)}
+                      onClick={() => { setPreviewModel(`/models/${mod.model_3d}`); setPreviewPdf(mod.report_pdf ? `/${mod.report_pdf}` : null); }}
                       className="px-3 py-1 bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 rounded-md text-xs font-medium transition-colors"
                     >
                       预览
@@ -287,8 +288,8 @@ export const ModuleTable: React.FC = () => {
                 <XMarkIcon className="h-6 w-6" />
               </button>
             </div>
-            <div className="flex-1 w-full h-full relative">
-              <ModelViewer3D src={previewModel} />
+            <div className="flex-1 w-full relative min-h-0">
+              <ModelViewer3D src={previewModel} pdfSrc={previewPdf} />
             </div>
           </div>
         </div>
